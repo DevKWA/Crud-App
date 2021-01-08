@@ -71,6 +71,9 @@ class Wines extends React.Component {
     this.state = {}
     this.handleChange = this.handleChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
+    this.selectWine = this.selectWine.bind(this);
+    this.editWine = this.editWine.bind(this);
+    this.submitEditedWine = this.submitEditedWine.bind(this);
   }
   async getWines() {
     try {
@@ -82,17 +85,6 @@ class Wines extends React.Component {
     }
   }
 
-  async handleDelete(id) {
-    try {
-      const res = await axios.delete(WINES_URL + id); // target wine id
-      console.log(res.data);
-      const updateRes = await axios.get(WINES_URL);
-      this.setState({ wines: updateRes.data });
-    } catch(er) {
-      console.error(er.message)
-    }
-  }
-
   componentDidMount() {
     this.getWines();
   }
@@ -100,16 +92,70 @@ class Wines extends React.Component {
     const { name, value } = e.target;
     this.setState({ [name]: value })
   }
-  handleSubmit() {
-    console.log('something')
+
+  async handleSubmit(e) {
+    e.preventDefault();
+    const {name, year, grapes, country, region, description, picture, price} = this.state;
+    const wine = {name, year, grapes, country, region, description, picture, price};
+
+    try {
+    const res = await axios.post(WINES_URL, wine);
+    console.log(res.data);
+
+    const updateRes = await axios.get(WINES_URL);
+    this.setState({wines: updateRes.data});
+  } catch(e){
+    console.error(e.message);
   }
+}
+
+  async handleDelete (id)  {
+    console.log(WINES_URL + id);
+    try {
+      const res = await axios.delete(WINES_URL + id); // target wine id
+      console.log(res.data);
+
+      const updateRes = await axios.get(WINES_URL);
+      this.setState({ wines: updateRes.data });
+    } catch(e) {
+      console.error(e.message)
+    }
+  }
+
+
+selectWine(selectedWine){
+  this.setState({ selectedWine});
+}
+
+editWine(e){
+  const {name, value } = e.target;
+  this.setState({...this.state, selectedWine:{
+...this.state.selectedWine,[name]: value}})
+}
+
+async submitEditedWine(e){
+  e.preventDefault();
+  try{
+    const editedWine = this.state.selectedWine;
+    console.log(editedWine)
+    const focusWine = WINES_URL + editedWine.id
+    //eslint-disable-next-line
+    const res = await axios.patch(focusWine, editedWine);
+    const resRefresh = await axios.get(WINES_URL);
+    this.setState({ wines: resRefresh.data});
+  } catch(e){
+    console.log(e);
+  }
+}
+
   render() {
     return (
       <div className="wines">
         <ul>
           {/* render info */}
           {
-            this.state.wines && this.state.wines.map(wine => <li> <br></br> <ul><button onClick={ () => this.handleDelete(wine.id)}>Delete Wine</button> </ul> <br></br> <br></br> Wine Name: { wine.name } <br></br> <br></br> Wine Year: { wine.year } <br></br> <br></br> Wine Grapes: {wine.grapes} <br></br> <br></br>
+            this.state.wines && this.state.wines.map(wine => <li key = {wine.id}> <br></br> <ul><button onClick={ () => this.handleDelete(wine.id)}>Delete Wine</button> 
+            <button onClick={ () => this.selectWine(wine)}>Edit Wine</button> </ul> <br></br> <br></br> Wine Name: { wine.name } <br></br> <br></br> Wine Year: { wine.year } <br></br> <br></br> Wine Grapes: {wine.grapes} <br></br> <br></br>
               
             Wine Country: {wine.country} <br></br> <br></br> Wine Region: {wine.region} <br></br> <br></br> Wine Description: {wine.description} <br></br><br></br> Wine URL: {wine.picture} <br></br> <br></br> Wine Price: {wine.price}
             </li>    
@@ -152,13 +198,57 @@ class Wines extends React.Component {
             Wine Price:
             <input type="text" name="price" />
           </label>
+                  <input type ="submit"/>
+                  </form>  
+                    <hr></hr>
+{
+                this.state.selectedWine && <form className ="wine-edit-form"
+                onChange = { this.editWine }
+                onSubmit = { this.submitEditedWine}>
+                  
+                  <label>
+              Wine Names:
+              <input type="text" name="name" defaultValue={ this.state.selectedWine.name } />
+            </label>
+            <label>
+              Wine Year:
+              <input type="text" name="year" defaultValue={ this.state.selectedWine.year } />
+            </label>
+            <label>
+              Wine Grapes:
+              <input type="text" name="grapes" defaultValue={ this.state.selectedWine.grapes } />
+            </label>
+            <label>
+              Wine Country:
+              <input type="text" name="country" defaultValue={ this.state.selectedWine.country } />
+            </label>
+            <label>
+              Wine Region:
+              <input type="text" name="region" defaultValue={ this.state.selectedWine.region } />
+            </label>
+            <label>
+              Wine Description:
+              <input type="text" name="description" defaultValue={ this.state.selectedWine.description } />
+            </label>
+            <label>
+              URL Picture:
+              <input type="text" name="picture" defaultValue={ this.state.selectedWine.picture } />
+            </label>
+            <label>
+              Wine Price:
+              <input type="text" name="price" defaultValue={ this.state.selectedWine.price } />
+            </label>
+            <input type="submit" />
         </form>
+  }
       </div>
     )
   }
 }
 
+   
 
+   
 
 
 
@@ -168,6 +258,10 @@ class Persons extends React.Component {
     this.state = {}
     this.handleChange = this.handleChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
+    this.selectPerson = this.selectPerson.bind(this);
+    this.editPerson= this.editPerson.bind(this);
+    this.submitEditedPerson = this.submitEditedPerson.bind(this);
+
   }
   async getPersons() {
     try {
@@ -179,19 +273,6 @@ class Persons extends React.Component {
   }
 
 
-  async handleDelete(id) {
-    try {
-      const res = await axios.delete(PERSON_URL + id); // target person id
-      console.log(res.data);
-      const updateRes = await axios.get(PERSON_URL);
-      this.setState({ wines: updateRes.data });
-    } catch(er) {
-      console.error(er.message)
-    }
-  }
-
-
-
   componentDidMount() {
     this.getPersons();
   }
@@ -199,16 +280,73 @@ class Persons extends React.Component {
     const { name, value } = e.target;
     this.setState({ [name]: value })
   }
-  handleSubmit() {
-    console.log('something')
+
+
+  async handleSubmit(e) {
+    e.preventDefault();
+    const {firstName, lastName, email, userName, instanceID} = this.state;
+    const person = {firstName, lastName, email, userName, instanceID};
+
+    try {
+    const res = await axios.post(PERSON_URL, person);
+    console.log(res.data);
+
+    const updateRes = await axios.get(PERSON_URL);
+    this.setState({persons: updateRes.data});
+  } catch(e){
+    console.error(e.message);
   }
+}
+
+
+  async handleDelete(id) {
+    try {
+      const res = await axios.delete(PERSON_URL + id); // target person id
+      console.log(res.data);
+      const updateRes = await axios.get(PERSON_URL);
+      this.setState({ persons: updateRes.data });
+    } catch(er) {
+      console.error(er.message)
+    }
+  }
+
+  selectPerson(selectedPerson){
+    this.setState({ selectedPerson});
+  }
+  
+  editPerson(e){
+    const {name, value } = e.target;
+    this.setState({...this.state, selectedPerson:{
+  ...this.state.selectedPerson,[name]: value}})
+  }
+  
+
+  async submitEditedPerson(e){
+    e.preventDefault();
+    try{
+      const editedPerson = this.state.selectedPerson;
+      console.log(editedPerson)
+      const focusPerson = PERSON_URL + editedPerson.id
+      //eslint-disable-next-line
+      const res = await axios.patch(focusPerson, editedPerson);
+      const resRefresh = await axios.get(PERSON_URL);
+      this.setState({ persons: resRefresh.data});
+    } catch(e){
+      console.log(e);
+    }
+  }
+
+
+
+
   render() {
     return (
       <div className="persons">
         <ul>
           {/* render info */}
           {
-            this.state.persons && this.state.persons.map(person => <li>   <br></br> <ul><button onClick={ () => this.handleDelete(person.id)}>Delete Person</button> </ul> <br></br> <br></br> First Name: {person.firstname } <br></br><br></br> Last Name: { person.lastname } <br></br> <br></br>Email: {
+            this.state.persons && this.state.persons.map(person => <li>   <br></br> <ul><button onClick={ () => this.handleDelete(person.id)}>Delete Person</button> 
+            <button onClick={ () => this.selectPerson(person)}>Edit Person</button> </ul> <br></br> <br></br> First Name: {person.firstname } <br></br><br></br> Last Name: { person.lastname } <br></br> <br></br>Email: {
               person.email} <br></br><br></br> Username: { person.username} <br></br><br></br> InstanceID: {person.instance_id} <br></br><br></br> </li>)
           }
         </ul>
@@ -233,10 +371,42 @@ class Persons extends React.Component {
           </label>
           <label>
             Instance_ID:
-            <input type = "text" name="instanceid"/>
+            <input type = "text" name="instance_id"/>
           </label>
-        </form>
-      </div>
+                    <input type ="submit"/>
+
+                      </form>
+                      <hr></hr>
+
+   {
+    this.state.selectedPerson&& <form className ="person-edit-form"
+    onChange = { this.editPerson }
+    onSubmit = { this.submitEditedPerson}>
+      
+      <label>
+  First Name:
+  <input type="text" name="firstname" defaultValue={ this.state.selectedPerson.firstname } />
+</label>
+<label>
+  Last Name:
+  <input type="text" name="lastname" defaultValue={ this.state.selectedPerson.lastname } />
+</label>
+<label>
+  Email:
+  <input type="text" name="email" defaultValue={ this.state.selectedPerson.email } />
+</label>
+<label>
+  Username:
+  <input type="text" name="username" defaultValue={ this.state.selectedPerson.username } />
+</label>
+<label>
+  Instance_ID:
+  <input type="text" name="instance_id" defaultValue={ this.state.selectedPerson.instanceid } />
+</label>
+                            <input type ="submit"/>
+</form>
+}
+ </div>
     )
   }
 }
@@ -253,6 +423,9 @@ class Books extends React.Component {
     this.state = {}
     this.handleChange = this.handleChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
+    this.selectBook = this.selectBook.bind(this);
+    this.editBook = this.editBook.bind(this);
+    this.submitEditedBook = this.submitEditedBook.bind(this);
   }
   async getBooks() {
     try {
@@ -260,18 +433,6 @@ class Books extends React.Component {
       this.setState({ books: res.data });
     } catch(e) {
       console.error(e);
-    }
-  }
-
-
-  async handleDelete(id) {
-    try {
-      const res = await axios.delete(BOOK_URL + id); // target book id
-      console.log(res.data);
-      const updateRes = await axios.get(BOOK_URL);
-      this.setState({ wines: updateRes.data });
-    } catch(er) {
-      console.error(er.message)
     }
   }
 
@@ -284,16 +445,72 @@ class Books extends React.Component {
     const { name, value } = e.target;
     this.setState({ [name]: value })
   }
-  handleSubmit() {
-    console.log('something')
+
+
+  async handleSubmit(e) {
+    e.preventDefault();
+    const {title, date, author, image} = this.state;
+    const book = {title, date, author, image};
+
+    try {
+    const res = await axios.post(BOOK_URL, book);
+    console.log(res.data);
+
+    const updateRes = await axios.get(BOOK_URL);
+    this.setState({books: updateRes.data});
+  } catch(e){
+    console.error(e.message);
   }
+}
+
+
+
+  async handleDelete(id) {
+    try {
+      const res = await axios.delete(BOOK_URL + id); // target book id
+      console.log(res.data);
+      const updateRes = await axios.get(BOOK_URL);
+      this.setState({ books: updateRes.data });
+    } catch(er) {
+      console.error(er.message)
+    }
+  }
+
+
+selectBook(selectedBook){
+  this.setState({ selectedBook});
+}
+
+editBook(e){
+  const {name, value } = e.target;
+  this.setState({...this.state, selectedBook:{
+...this.state.selectedBook,[name]: value}})
+}
+
+async submitEditedBook(e){
+  e.preventDefault();
+  try{
+    const editedBook = this.state.selectedBook;
+    console.log(editedBook)
+    const focusBook = BOOK_URL + editedBook.id
+    //eslint-disable-next-line
+    const res = await axios.patch(focusBook, editedBook);
+    const resRefresh = await axios.get(BOOK_URL);
+    this.setState({ books: resRefresh.data});
+  } catch(e){
+    console.log(e);
+  }
+}
+
+
   render() {
     return (
       <div className="books">
         <ul>
           {/* render info */}
           {
-            this.state.books && this.state.books.map(book => <li>  <br></br> <ul><button onClick={ () => this.handleDelete(book.id)}>Delete Book</button> </ul> <br></br>Title: { book.title } <br></br> <br></br> Author: { book.author } <br></br> <br></br>
+            this.state.books && this.state.books.map(book => <li>  <br></br> <ul><button onClick={ () => this.handleDelete(book.id)}>Delete Book</button> 
+            <button onClick={ () => this.selectBook(book)}>Edit Book</button> </ul> <br></br>Title: { book.title } <br></br> <br></br> Author: { book.author } <br></br> <br></br>
              Release Date: {book.release_date} <br></br> <br></br> Image: {book.image} <br></br> <br></br> </li>)
           }
         </ul>
@@ -306,7 +523,7 @@ class Books extends React.Component {
           </label>
           <label>
             Release Date:
-            <input type="text" name="date" />
+            <input type="text" name="release_date" />
           </label>
           <label>
              Author:
@@ -316,11 +533,48 @@ class Books extends React.Component {
             Image:
             <input type="text" name="image" />
           </label>
+                 <input type ="submit"/>
         </form>
-      </div>
+
+        <hr></hr>
+ {
+    this.state.selectedBook&& <form className ="book-edit-form"
+    onChange = { this.editBook }
+    onSubmit = { this.submitEditedBook}>
+      
+      <label>
+  Book Title:
+  <input type="text" name="title" defaultValue={ this.state.selectedBook.title } />
+</label>
+<label>
+  Release Date:
+  <input type="text" name="release_date" defaultValue={ this.state.selectedBook.date } />
+</label>
+<label>
+  Author:
+  <input type="text" name="author" defaultValue={ this.state.selectedBook.author } />
+</label>
+<label>
+  Image:
+  <input type="text" name="image" defaultValue={ this.state.selectedBook.image } />
+</label>
+            <input type ="submit"/>
+</form>
+}
+</div>
     )
   }
 }
+
+
+
+
+
+
+
+
+
+
 
 
 
